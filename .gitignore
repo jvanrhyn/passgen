@@ -1,0 +1,21 @@
+# Go binaries
+/bin/
+/obj/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go workspace files
+*.test
+*.out
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
