@@ -15,6 +15,26 @@ Password Generator is a command-line application written in Go that allows users
    go run main.go --length <length> --numbers --symbols --clip
    ```
 
+   or alternativeky use the sort form:
+   ```bash
+   go run main.go -l <length> -n -s -c
+   ```
+
+3. Run a compiled version of the application, build the application first:
+   ```bash
+   go build
+   ```
+   and then run the compiled application:
+   ```bash
+   ./passgen --length <length> --numbers --symbols --clip
+   ```
+   or alternatively use the short form:
+   ```bash
+   ./passgen -l <length> -n -s -c
+   ```
+   where:
+
+
    - `--length`: Specify the desired length of the password (default is set by the `PASSWORD_LENGTH` environment variable).
    - `--numbers`: Include numbers in the password.
    - `--symbols`: Include symbols in the password.
@@ -22,8 +42,6 @@ Password Generator is a command-line application written in Go that allows users
 
 ## Design
 The application is structured using best practices for Go projects:
-- **cmd/**: Contains the command-line interface logic.
-- **internal/**: Contains the password generation logic.
 - **cmd/**: Contains the command-line interface logic.
 - **internal/**: Contains the password generation logic.
 
