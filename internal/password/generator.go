@@ -8,7 +8,7 @@ import (
 const (
 	letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	numbers = "0123456789"
-	symbols = "!@#$%^&*()-_=+[]{}|;:,.<>?/"
+	symbols = "!@#%*_=+"
 )
 
 // GeneratePassword generates a secure password of the specified length.
