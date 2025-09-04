@@ -35,13 +35,8 @@ jobs:
           echo "DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
           echo "LDFLAGS=-X github.com/jvanrhyn/passgen/internal/version.Version=${VERSION} -X github.com/jvanrhyn/passgen/internal/version.Commit=${COMMIT} -X github.com/jvanrhyn/passgen/internal/version.Date=${DATE}" >> $GITHUB_ENV
 
-      - name: Enable ldflags via GOFLAGS
-        shell: bash
-        run: |
-          echo "GOFLAGS=-ldflags \"$LDFLAGS\"" >> $GITHUB_ENV
-
       - name: Run tests
-        run: go test ./...
+        run: go test -ldflags "$LDFLAGS" ./...
 
       - name: Build with Go (matrix)
         shell: bash
@@ -58,7 +53,7 @@ jobs:
           mkdir -p bin
           OUT=bin/passgen
           if [[ "$GOOS" == "windows" ]]; then OUT=bin/passgen.exe; fi
-          go build -o "$OUT" ./
+          go build -ldflags "$LDFLAGS" -o "$OUT" ./
 
       - name: Package artifacts
         id: package

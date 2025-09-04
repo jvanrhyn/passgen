@@ -21,8 +21,15 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Compute ldflags
+        shell: bash
+        run: |
+          echo "COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          echo "LDFLAGS=-X github.com/jvanrhyn/passgen/internal/version.Version=dev -X github.com/jvanrhyn/passgen/internal/version.Commit=${COMMIT} -X github.com/jvanrhyn/passgen/internal/version.Date=${DATE}" >> $GITHUB_ENV
+
       - name: Run unit and CLI tests
-        run: go test -v ./...
+        run: go test -ldflags "$LDFLAGS" -v ./...
 
   build-matrix:
     name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
@@ -50,4 +57,8 @@ jobs:
           mkdir -p bin
           OUT=bin/passgen
           if [[ "$GOOS" == "windows" ]]; then OUT=bin/passgen.exe; fi
-          go build -o "$OUT" ./
+          # Use dev version for PR builds; embed commit and date
+          COMMIT=$(git rev-parse --short HEAD)
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          LDFLAGS="-X github.com/jvanrhyn/passgen/internal/version.Version=dev -X github.com/jvanrhyn/passgen/internal/version.Commit=${COMMIT} -X github.com/jvanrhyn/passgen/internal/version.Date=${DATE}"
+          go build -ldflags "$LDFLAGS" -o "$OUT" ./
