@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -37,8 +38,12 @@ func buildAndRun(t *testing.T, args []string, env map[string]string) (string, st
 		t.Cleanup(func() { _ = os.Remove(filepath.Join(repoRoot, ".env")) })
 	}
 
-	// Build the binary into tempDir
-	binPath := filepath.Join(tempDir, "passgen-test-bin")
+	// Build the binary into tempDir (add .exe on Windows)
+	binName := "passgen-test-bin"
+	if runtime.GOOS == "windows" {
+		binName += ".exe"
+	}
+	binPath := filepath.Join(tempDir, binName)
 	buildCmd := exec.Command("go", "build", "-o", binPath, "./")
 	buildCmd.Dir = repoRoot
 	buildOut, err := buildCmd.CombinedOutput()
