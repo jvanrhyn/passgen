@@ -1,3 +1,4 @@
+// Package password provides functionality to generate secure passwords.
 package password
 
 import (
