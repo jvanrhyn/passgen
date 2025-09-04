@@ -10,12 +10,13 @@ permissions:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.os }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
+        arch: [amd64, arm64]
 
     steps:
       - name: Checkout
@@ -52,6 +53,8 @@ jobs:
           else
             export GOOS=linux
           fi
+          export GOARCH=${{ matrix.arch }}
+          export CGO_ENABLED=0
           go run build.go
 
       - name: Package artifacts
