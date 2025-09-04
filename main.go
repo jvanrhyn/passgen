@@ -8,6 +8,7 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/joho/godotenv"
 	"github.com/jvanrhyn/passgen/internal/password"
+	"github.com/jvanrhyn/passgen/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -22,11 +23,23 @@ func main() {
 	var useNumbers bool
 	var useSymbols bool
 	var clip bool
+	var showVersion bool
 
 	var rootCmd = &cobra.Command{
 		Use:   "passgen",
 		Short: "Generate a secure password",
 		Run: func(cmd *cobra.Command, args []string) {
+			if showVersion {
+				fmt.Printf("passgen %s", version.Version)
+				if version.Commit != "" {
+					fmt.Printf(" (%s)", version.Commit)
+				}
+				if version.Date != "" {
+					fmt.Printf(" built %s", version.Date)
+				}
+				fmt.Println()
+				return
+			}
 			// Generate password
 			password, err := password.GeneratePassword(length, useNumbers, useSymbols)
 			if err != nil {
@@ -61,6 +74,7 @@ func main() {
 	rootCmd.Flags().BoolVarP(&useNumbers, "numbers", "n", false, "Include numbers in the password")
 	rootCmd.Flags().BoolVarP(&useSymbols, "symbols", "s", false, "Include symbols in the password")
 	rootCmd.Flags().BoolVarP(&clip, "clip", "c", false, "Copy password to clipboard")
+	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Show application version")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
