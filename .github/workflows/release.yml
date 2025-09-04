@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Compute version metadata
+        shell: bash
+        run: |
+          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          echo 'LDFLAGS=-X github.com/jvanrhyn/passgen/internal/version.Version=${VERSION} -X github.com/jvanrhyn/passgen/internal/version.Commit=${COMMIT} -X github.com/jvanrhyn/passgen/internal/version.Date=${DATE}' >> $GITHUB_ENV
+
+      - name: Enable ldflags via GOFLAGS
+        shell: bash
+        run: |
+          echo "GOFLAGS=-ldflags \"$LDFLAGS\"" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Build with build.go (macOS/Windows)
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            export GOOS=darwin
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            export GOOS=windows
+          fi
+          go run build.go
+
+      - name: Package artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          GOARCH=$(go env GOARCH)
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            ART="passgen-${VERSION}-windows-${GOARCH}.exe"
+            mv bin/passgen.exe "dist/${ART}"
+          else
+            ART="passgen-${VERSION}-macos-${GOARCH}"
+            mv bin/passgen "dist/${ART}"
+          fi
+          echo "ASSET_NAME=${ART}" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ASSET_NAME }}
+          path: dist/${{ env.ASSET_NAME }}
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: passgen-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: dist/**
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') }}
