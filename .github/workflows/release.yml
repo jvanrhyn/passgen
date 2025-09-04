@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout
@@ -42,17 +42,20 @@ jobs:
       - name: Run tests
         run: go test ./...
 
-      - name: Build with build.go (macOS/Windows)
+      - name: Build with build.go (macOS/Windows/Linux)
         shell: bash
         run: |
           if [[ "${{ runner.os }}" == "macOS" ]]; then
             export GOOS=darwin
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
             export GOOS=windows
+          else
+            export GOOS=linux
           fi
           go run build.go
 
       - name: Package artifacts
+        id: package
         shell: bash
         run: |
           set -euo pipefail
@@ -61,17 +64,20 @@ jobs:
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             ART="passgen-${VERSION}-windows-${GOARCH}.exe"
             mv bin/passgen.exe "dist/${ART}"
-          else
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
             ART="passgen-${VERSION}-macos-${GOARCH}"
             mv bin/passgen "dist/${ART}"
+          else
+            ART="passgen-${VERSION}-linux-${GOARCH}"
+            mv bin/passgen "dist/${ART}"
           fi
-          echo "ASSET_NAME=${ART}" >> $GITHUB_ENV
-
+          echo "asset_name=${ART}" >> $GITHUB_OUTPUT
+          echo "asset_path=dist/${ART}" >> $GITHUB_OUTPUT
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ASSET_NAME }}
-          path: dist/${{ env.ASSET_NAME }}
+          name: ${{ steps.package.outputs.asset_name }}
+          path: ${{ steps.package.outputs.asset_path }}
 
   release:
     name: Publish Release
