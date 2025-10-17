@@ -19,6 +19,7 @@ func main() {
 	var length int
 	var useNumbers bool
 	var useSymbols bool
+	var useSafeSymbols bool
 	var clip bool
 	var showVersion bool
 
@@ -50,7 +51,7 @@ func main() {
 			}
 
 			// Generate password
-			pwd, err := password.GeneratePassword(length, useNumbers, useSymbols)
+			pwd, err := password.GeneratePassword(length, useNumbers, useSymbols, useSafeSymbols)
 			if err != nil {
 				return fmt.Errorf("error generating password: %w", err)
 			}
@@ -84,6 +85,7 @@ func main() {
 	rootCmd.Flags().IntVarP(&length, "length", "l", defaultLength, "Length of the password")
 	rootCmd.Flags().BoolVarP(&useNumbers, "numbers", "n", false, "Include numbers in the password")
 	rootCmd.Flags().BoolVarP(&useSymbols, "symbols", "s", false, "Include symbols in the password")
+	rootCmd.Flags().BoolVar(&useSafeSymbols, "safe-symbols", false, "Use only shell-safe symbols (excludes |;<>?~)")
 	rootCmd.Flags().BoolVarP(&clip, "clip", "c", false, "Copy password to clipboard")
 	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Show application version")
 

@@ -7,15 +7,17 @@ import (
 )
 
 const (
-	letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	numbers = "0123456789"
-	symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?~"
+	letters     = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	numbers     = "0123456789"
+	symbols     = "!@#$%^&*()_+-=[]{}|;:,.<>?~"
+	safeSymbols = "!@#$%^&*()_+-=[]{}:,."
 )
 
 // GeneratePassword generates a secure password of the specified length.
 // When includeNumbers or includeSymbols are true, the password is guaranteed
 // to contain at least one character from each requested character class.
-func GeneratePassword(length int, includeNumbers bool, includeSymbols bool) (string, error) {
+// The useSafeSymbols parameter controls whether to use shell-safe symbols only.
+func GeneratePassword(length int, includeNumbers bool, includeSymbols bool, useSafeSymbols bool) (string, error) {
 	if length < 0 {
 		return "", nil // Let the slice allocation panic naturally for consistency
 	}
@@ -29,7 +31,11 @@ func GeneratePassword(length int, includeNumbers bool, includeSymbols bool) (str
 		charSets = append(charSets, numbers)
 	}
 	if includeSymbols {
-		charSets = append(charSets, symbols)
+		if useSafeSymbols {
+			charSets = append(charSets, safeSymbols)
+		} else {
+			charSets = append(charSets, symbols)
+		}
 	}
 
 	// Calculate how many chars we need to guarantee from each set
