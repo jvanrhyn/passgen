@@ -1,6 +1,7 @@
 package password
 
 import (
+	"strings"
 	"testing"
 	"unicode"
 )
@@ -89,14 +90,15 @@ func TestGenerate_ZeroLength(t *testing.T) {
 	}
 }
 
-func TestGenerate_NegativeLengthPanics(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatalf("expected panic for negative length")
-		}
-	}()
-	// Negative length should panic due to make([]byte, length)
-	_, _ = GeneratePassword(-1, false, false)
+func TestGenerate_NegativeLengthReturnsEmpty(t *testing.T) {
+	// Negative length should return empty string without error
+	pw, err := GeneratePassword(-1, false, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if pw != "" {
+		t.Fatalf("expected empty string for negative length, got %q", pw)
+	}
 }
 
 func TestGenerate_LargeLength(t *testing.T) {
@@ -113,5 +115,92 @@ func TestGenerate_LargeLength(t *testing.T) {
 		if unicode.IsSpace(r) {
 			t.Fatalf("unexpected whitespace in password")
 		}
+	}
+}
+
+func TestGenerate_GuaranteesNumbers(t *testing.T) {
+	// Generate multiple times to ensure numbers are always present
+	for i := 0; i < 10; i++ {
+		pw, err := GeneratePassword(20, true, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		hasNumber := false
+		for _, r := range pw {
+			if unicode.IsDigit(r) {
+				hasNumber = true
+				break
+			}
+		}
+		if !hasNumber {
+			t.Fatalf("password should contain at least one number: %q", pw)
+		}
+	}
+}
+
+func TestGenerate_GuaranteesSymbols(t *testing.T) {
+	// Generate multiple times to ensure symbols are always present
+	for i := 0; i < 10; i++ {
+		pw, err := GeneratePassword(20, false, true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		hasSymbol := false
+		for _, r := range pw {
+			if strings.ContainsRune(symbolsSet, r) {
+				hasSymbol = true
+				break
+			}
+		}
+		if !hasSymbol {
+			t.Fatalf("password should contain at least one symbol: %q", pw)
+		}
+	}
+}
+
+func TestGenerate_GuaranteesAllCharacterTypes(t *testing.T) {
+	// Generate multiple times to ensure all types are present
+	for i := 0; i < 10; i++ {
+		pw, err := GeneratePassword(30, true, true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		hasLetter := false
+		hasNumber := false
+		hasSymbol := false
+		
+		for _, r := range pw {
+			if unicode.IsLetter(r) {
+				hasLetter = true
+			}
+			if unicode.IsDigit(r) {
+				hasNumber = true
+			}
+			if strings.ContainsRune(symbolsSet, r) {
+				hasSymbol = true
+			}
+		}
+		
+		if !hasLetter {
+			t.Fatalf("password should contain at least one letter: %q", pw)
+		}
+		if !hasNumber {
+			t.Fatalf("password should contain at least one number: %q", pw)
+		}
+		if !hasSymbol {
+			t.Fatalf("password should contain at least one symbol: %q", pw)
+		}
+	}
+}
+
+func TestGenerate_ShortPasswordWithAllTypes(t *testing.T) {
+	// When password length is less than number of character types,
+	// it should still work without error
+	pw, err := GeneratePassword(2, true, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(pw) != 2 {
+		t.Fatalf("expected length 2, got %d", len(pw))
 	}
 }

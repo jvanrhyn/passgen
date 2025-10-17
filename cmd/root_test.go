@@ -156,14 +156,16 @@ func TestCLI_ClipboardEnabledAttemptsCopy(t *testing.T) {
 	}
 }
 
-func TestCLI_MissingDotEnvFailsEarly(t *testing.T) {
-	// When .env is missing, the app exits with an error about loading .env
-	stdout, _, err := buildAndRun(t, []string{}, nil)
-	if err == nil {
-		t.Fatalf("expected non-zero exit when .env is missing, stdout=%q", stdout)
+func TestCLI_MissingDotEnvWorksWithDefaults(t *testing.T) {
+	// When .env is missing, the app should work with default values
+	stdout, stderr, err := buildAndRun(t, []string{}, nil)
+	if err != nil {
+		t.Fatalf("expected success when .env is missing (using defaults), stdout=%q, stderr=%q, err=%v", stdout, stderr, err)
 	}
-	if !strings.Contains(stdout, "Error loading .env file") {
-		t.Fatalf("expected error about loading .env, got: %q", stdout)
+	pwd := readGeneratedPassword(stdout)
+	// Default length is 16
+	if len(pwd) != 16 {
+		t.Fatalf("expected default length 16, got %d", len(pwd))
 	}
 }
 
@@ -201,13 +203,17 @@ func TestCLI_ZeroLength(t *testing.T) {
 	}
 }
 
-func TestCLI_NegativeLengthPanics(t *testing.T) {
-	// Provide .env so loading succeeds, then override with -l -1 to trigger panic in generator
-	_, _, err := buildAndRun(t, []string{"-l", "-1"}, map[string]string{
+func TestCLI_NegativeLengthReturnsEmpty(t *testing.T) {
+	// Negative length should return empty password (handled gracefully)
+	stdout, stderr, err := buildAndRun(t, []string{"-l", "-1"}, map[string]string{
 		"PASSWORD_LENGTH": "8",
 		"CLIP_ALLOWED":    "false",
 	})
-	if err == nil {
-		t.Fatalf("expected non-zero exit for negative length")
+	if err != nil {
+		t.Fatalf("unexpected error: %v, stderr: %s", err, stderr)
+	}
+	pwd := readGeneratedPassword(stdout)
+	if len(pwd) != 0 {
+		t.Fatalf("expected empty password for negative length, got %q", pwd)
 	}
 }
