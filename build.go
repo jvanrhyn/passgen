@@ -16,7 +16,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type target struct {
@@ -36,6 +38,30 @@ func main() {
 	if err := os.MkdirAll(binDir, 0o755); err != nil {
 		fatalf("creating bin directory: %v", err)
 	}
+
+	// Read and increment build number
+	buildNum, err := readAndIncrementBuildNumber(rootDir)
+	if err != nil {
+		fatalf("managing build number: %v", err)
+	}
+
+	// Determine if this is a release build (check for RELEASE env var or -release flag)
+	isRelease := os.Getenv("RELEASE") == "true"
+	if len(os.Args) > 1 && os.Args[1] == "-release" {
+		isRelease = true
+	}
+
+	// Construct build number string
+	buildNumStr := strconv.Itoa(buildNum)
+	if !isRelease {
+		buildNumStr += "-dev"
+	}
+
+	fmt.Printf("Build #%s\n", buildNumStr)
+
+	// Get git commit hash if available
+	commit := getGitCommit()
+	buildDate := time.Now().UTC().Format(time.RFC3339)
 
 	// Discover main packages in the module
 	mains, err := discoverMainPackages()
@@ -63,10 +89,14 @@ func main() {
 		ext = ".exe"
 	}
 
+	// Prepare ldflags for version injection
+	ldflags := fmt.Sprintf("-X github.com/jvanrhyn/passgen/internal/version.BuildNumber=%s -X github.com/jvanrhyn/passgen/internal/version.Commit=%s -X github.com/jvanrhyn/passgen/internal/version.Date=%s",
+		buildNumStr, commit, buildDate)
+
 	for _, t := range mains {
 		outPath := filepath.Join(binDir, t.exeName+ext)
 		fmt.Printf("Building %s -> %s\n", t.importPath, outPath)
-		if err := runCmd("go", "build", "-o", outPath, t.importPath); err != nil {
+		if err := runCmd("go", "build", "-ldflags", ldflags, "-o", outPath, t.importPath); err != nil {
 			fatalf("building %s: %v", t.importPath, err)
 		}
 	}
@@ -196,4 +226,51 @@ func fatalf(format string, a ...any) {
 	buf.WriteString(msg)
 	fmt.Fprint(os.Stderr, buf.String())
 	os.Exit(1)
+}
+
+// readAndIncrementBuildNumber reads the current build number from .buildnum file,
+// increments it, writes it back, and returns the new build number.
+func readAndIncrementBuildNumber(rootDir string) (int, error) {
+	buildNumFile := filepath.Join(rootDir, ".buildnum")
+
+	// Read current build number
+	var currentNum int
+	data, err := os.ReadFile(buildNumFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// File doesn't exist, start at 0
+			currentNum = 0
+		} else {
+			return 0, fmt.Errorf("reading build number file: %v", err)
+		}
+	} else {
+		numStr := strings.TrimSpace(string(data))
+		if numStr != "" {
+			currentNum, err = strconv.Atoi(numStr)
+			if err != nil {
+				return 0, fmt.Errorf("parsing build number: %v", err)
+			}
+		}
+	}
+
+	// Increment
+	newNum := currentNum + 1
+
+	// Write back
+	if err := os.WriteFile(buildNumFile, []byte(strconv.Itoa(newNum)+"\n"), 0o644); err != nil {
+		return 0, fmt.Errorf("writing build number file: %v", err)
+	}
+
+	return newNum, nil
+}
+
+// getGitCommit returns the current git commit hash (short form).
+// Returns empty string if not in a git repo or git is not available.
+func getGitCommit() string {
+	cmd := exec.Command("git", "rev-parse", "--short", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }

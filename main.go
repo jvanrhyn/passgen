@@ -28,8 +28,11 @@ func main() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if showVersion {
 				fmt.Printf("passgen %s", version.Version)
+				if version.BuildNumber != "" && version.BuildNumber != "0" {
+					fmt.Printf(" (build %s)", version.BuildNumber)
+				}
 				if version.Commit != "" {
-					fmt.Printf(" (%s)", version.Commit)
+					fmt.Printf(" [%s]", version.Commit)
 				}
 				if version.Date != "" {
 					fmt.Printf(" built %s", version.Date)

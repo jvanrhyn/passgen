@@ -19,3 +19,6 @@
 
 # Environment files
 .env
+
+# Build tracking
+.buildnum
