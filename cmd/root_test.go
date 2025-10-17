@@ -118,7 +118,7 @@ func TestCLI_NumbersAndSymbolsFlagsAffectCharacterSet(t *testing.T) {
 		t.Fatalf("expected length 50, got %d", len(pwd))
 	}
 	// ensure only characters from union set appear
-	allowed := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#%*_=+"
+	allowed := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?~"
 	re := regexp.MustCompile("^[" + regexp.QuoteMeta(allowed) + "]+$")
 	if !re.MatchString(pwd) {
 		t.Fatalf("password contains invalid characters: %q", pwd)
@@ -203,17 +203,16 @@ func TestCLI_ZeroLength(t *testing.T) {
 	}
 }
 
-func TestCLI_NegativeLengthReturnsEmpty(t *testing.T) {
-	// Negative length should return empty password (handled gracefully)
-	stdout, stderr, err := buildAndRun(t, []string{"-l", "-1"}, map[string]string{
+func TestCLI_NegativeLengthReturnsError(t *testing.T) {
+	// Negative length should now return a validation error
+	_, stderr, err := buildAndRun(t, []string{"-l", "-1"}, map[string]string{
 		"PASSWORD_LENGTH": "8",
 		"CLIP_ALLOWED":    "false",
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v, stderr: %s", err, stderr)
+	if err == nil {
+		t.Fatalf("expected error for negative length")
 	}
-	pwd := readGeneratedPassword(stdout)
-	if len(pwd) != 0 {
-		t.Fatalf("expected empty password for negative length, got %q", pwd)
+	if !strings.Contains(stderr, "password length must be non-negative") {
+		t.Fatalf("expected validation error message, got: %q", stderr)
 	}
 }

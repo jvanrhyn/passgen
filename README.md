@@ -32,13 +32,38 @@ Password Generator is a command-line application written in Go that allows users
    ```bash
    ./passgen -l <length> -n -s -c
    ```
-   where:
 
+### Options
 
-   - `--length`: Specify the desired length of the password (default is set by the `PASSWORD_LENGTH` environment variable).
-   - `--numbers`: Include numbers in the password.
-   - `--symbols`: Include symbols in the password.
-   - `--clip`: Copy the generated password to the clipboard if allowed by the `CLIP_ALLOWED` environment variable.
+- `--length, -l`: Specify the desired length of the password (default: 16, or value from `PASSWORD_LENGTH` environment variable)
+- `--numbers, -n`: Include numbers in the password (guarantees at least one number)
+- `--symbols, -s`: Include symbols in the password (guarantees at least one symbol)
+- `--clip, -c`: Copy the generated password to the clipboard (requires `CLIP_ALLOWED=true` environment variable)
+- `--version, -v`: Show application version information
+
+### Environment Variables (Optional)
+
+- `PASSWORD_LENGTH`: Set default password length (default: 16)
+- `CLIP_ALLOWED`: Enable clipboard functionality (`true` or `false`, default: disabled)
+
+These can be set in a `.env` file in the project root, or as system environment variables.
+
+### Examples
+
+Generate a 20-character password with numbers and symbols:
+```bash
+./passgen -l 20 -n -s
+```
+
+Generate a password using defaults (16 characters, letters only):
+```bash
+./passgen
+```
+
+Generate a password and copy to clipboard:
+```bash
+CLIP_ALLOWED=true ./passgen -l 24 -n -s -c
+```
 
 ## Design
 The application is structured using best practices for Go projects:
