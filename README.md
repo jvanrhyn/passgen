@@ -15,7 +15,7 @@ Password Generator is a command-line application written in Go that allows users
    go run main.go --length <length> --numbers --symbols --clip
    ```
 
-   or alternativeky use the sort form:
+   or alternatively use the short form:
    ```bash
    go run main.go -l <length> -n -s -c
    ```
