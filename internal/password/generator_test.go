@@ -9,7 +9,7 @@ import (
 const (
 	lettersSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	numbersSet = "0123456789"
-	symbolsSet = "!@#%*_=+"
+	symbolsSet = "!@#$%^&*()_+-=[]{}|;:,.<>?~"
 )
 
 func allRunesInSet(s, allowed string) bool {
