@@ -13,11 +13,8 @@ import (
 )
 
 func main() {
-	// Load environment variables from .env file
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
-		os.Exit(1)
-	}
+	// Load environment variables from .env file if it exists (optional)
+	_ = godotenv.Load() // Ignore error if .env doesn't exist
 
 	var length int
 	var useNumbers bool
@@ -64,13 +61,15 @@ func main() {
 		},
 	}
 
-	maxLengthStr := os.Getenv("PASSWORD_LENGTH")
-	maxLength, err := strconv.Atoi(maxLengthStr)
-	if err != nil {
-		panic("PASSWORD_LENGTH environment variable is not set or invalid")
+	// Get default password length from environment or use 16 as default
+	defaultLength := 16
+	if maxLengthStr := os.Getenv("PASSWORD_LENGTH"); maxLengthStr != "" {
+		if parsedLength, err := strconv.Atoi(maxLengthStr); err == nil && parsedLength > 0 {
+			defaultLength = parsedLength
+		}
 	}
 
-	rootCmd.Flags().IntVarP(&length, "length", "l", maxLength, "Length of the password")
+	rootCmd.Flags().IntVarP(&length, "length", "l", defaultLength, "Length of the password")
 	rootCmd.Flags().BoolVarP(&useNumbers, "numbers", "n", false, "Include numbers in the password")
 	rootCmd.Flags().BoolVarP(&useSymbols, "symbols", "s", false, "Include symbols in the password")
 	rootCmd.Flags().BoolVarP(&clip, "clip", "c", false, "Copy password to clipboard")
