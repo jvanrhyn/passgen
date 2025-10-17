@@ -25,7 +25,7 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "passgen",
 		Short: "Generate a secure password",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if showVersion {
 				fmt.Printf("passgen %s", version.Version)
 				if version.Commit != "" {
@@ -35,29 +35,38 @@ func main() {
 					fmt.Printf(" built %s", version.Date)
 				}
 				fmt.Println()
-				return
+				return nil
 			}
+
+			// Validate password length
+			if length < 0 {
+				return fmt.Errorf("password length must be non-negative, got: %d", length)
+			}
+			if length > 10000 {
+				return fmt.Errorf("password length too large (max 10000), got: %d", length)
+			}
+
 			// Generate password
-			password, err := password.GeneratePassword(length, useNumbers, useSymbols)
+			pwd, err := password.GeneratePassword(length, useNumbers, useSymbols)
 			if err != nil {
-				fmt.Println("Error generating password:", err)
-				os.Exit(1)
+				return fmt.Errorf("error generating password: %w", err)
 			}
 
 			// Print the generated password
-			fmt.Println("Generated Password:", password)
+			fmt.Println("Generated Password:", pwd)
 
 			// Check if clipboard copying is allowed
 			clipAllowed := os.Getenv("CLIP_ALLOWED")
 			if clipAllowed == "true" && clip {
-				if err := clipboard.WriteAll(password); err != nil {
-					fmt.Println("Error copying to clipboard:", err)
-					os.Exit(1)
+				if err := clipboard.WriteAll(pwd); err != nil {
+					return fmt.Errorf("error copying to clipboard: %w", err)
 				}
 				fmt.Println("Password copied to clipboard")
 			} else if clip {
 				fmt.Println("Clipboard copying is disabled by environment settings")
 			}
+
+			return nil
 		},
 	}
 
@@ -76,7 +85,6 @@ func main() {
 	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Show application version")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }
